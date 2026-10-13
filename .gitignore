@@ -1,0 +1,12 @@
+/target/
+/captures/
+/traces/
+*.exe
+*.dll
+*.gpr
+*.rep/
+*.zip
+*.tar.gz
+.env
+.env.*
+__pycache__/

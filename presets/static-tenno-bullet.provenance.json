@@ -1,0 +1,348 @@
+{
+  "name": "Static Tenno movement experiment",
+  "status": "UNMEASURED_PARTIAL_PRESET",
+  "build": "2026.10.08.13.05",
+  "input_executable_sha256": "13d6d53423c9e1a552209db27e8972653162dd95c36c7789583707b69be49a5b",
+  "purpose": "Apply verified static jump, ordinary ground/air and conditional wall-launch coefficients to the original lab with explicit input/state/runtime assumptions. Not a complete Tenno simulation or measured match.",
+  "parameters": {
+    "physics_base_speed": {
+      "value": 7.5,
+      "provenance": "RECOVERED_STATIC_ASSET",
+      "source": "TennoWalkAttribs.MaxSpeed, cfg+78; launch getter1408728c0; Ghost false constructor assumption"
+    },
+    "bullet_jump_speed": {
+      "value": 15.0,
+      "provenance": "CONDITIONAL_DERIVATION",
+      "formula": "7.5 * TennoClimbController.BulletJumpSpeed(2.5) * file-initial global(.8)",
+      "assumptions": "No stat upgrades or runtime overrides; static selected types apply"
+    },
+    "double_jump_horizontal_gain": {
+      "value": 0.34999999,
+      "provenance": "RECOVERED_STATIC_ASSET",
+      "source": "TennoClimbController.DoubleJumpSpeed; multiplies physics base speed, not bullet speed"
+    },
+    "jump_height": {
+      "value": 5.0,
+      "provenance": "RECOVERED_STATIC_ASSET",
+      "source": "TennoWalkAttribs.JumpHeight, cfg+B8"
+    },
+    "double_jump_height": {
+      "value": 3.75,
+      "provenance": "CONDITIONAL_DERIVATION",
+      "formula": "JumpHeight5 * TennoAvatar.AirJumpHeightMultiplier.75",
+      "assumptions": "Native self770 launch scale1 and no stat/runtime overrides"
+    },
+    "launch_gravity": {
+      "value": 9.81,
+      "provenance": "RECOVERED_NATIVE_DEFAULT",
+      "source": "141195180 substitutes -9.81 when caller gravity argument0"
+    },
+    "gravity": {
+      "value": 24.0,
+      "provenance": "CONDITIONAL_STATIC_INHERITANCE_DERIVATION",
+      "formula": "-(PhysicsMgrDesc.Gravity.Y(-15) + TennoWalkAttribs.AdditionalGravity(-9)) * assumed modifier product1, represented downward-positive in lab",
+      "source": "Pass44: verified own PhysicsMgrDesc.Gravity={0,-15,0}; RegionMgrImpl names AsyncPhysicsMgrDesc/StreamingPhysicsMgrDesc whose declared ancestry reaches that base without own Gravity overrides; native mGravity serializer binds descriptor+30, copied into PhysXMgr1E160 and read by Physics_GetEffectiveGravity",
+      "assumptions": "Assumes declared static parent gravity applies to the selected resource and no runtime setter/stat override. Runtime inheritance merge, active region selection and current world gravity are not measured or proved. Launch-gravity fallback9.81 is a distinct calculation and remains unchanged.",
+      "evidence": "Private stage3/physics/gravity-config-pass44 and gravity-source-pass43"
+    },
+    "bullet_jump_vertical_scale": {
+      "value": 1.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb+B5C; own asset field absent; effective inheritance unverified"
+    },
+    "bullet_jump_gravity_scale": {
+      "value": 0.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb+B54; own asset field absent; effective inheritance unverified"
+    },
+    "bullet_jump_duration": {
+      "value": 0.80000001,
+      "provenance": "STATIC_VALUE_WITH_LAB_POLICY",
+      "source": "TennoClimbController.BulletJumpGravityMultiplierDuration",
+      "limitation": "Recovered gravity lifetime; lab also uses this for visible BulletJump state, which is approximate"
+    },
+    "gravity_modifier_fade_window": {
+      "value": 0.5,
+      "provenance": "FILE_INITIAL_GLOBAL",
+      "source": "14270c7e4, live override unverified"
+    },
+    "max_jumps": {
+      "value": 2,
+      "provenance": "RECOVERED_STATIC_ASSET",
+      "source": "TennoAvatar.NumJumps bound actor+BEB; live upgrades/gates remain partial"
+    },
+    "ground_acceleration": {
+      "value": 12,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.Acceleration cfgA0",
+      "limitation": "Positive ordinary coefficient path; prototype grounded/airborne gates approximate native mode/contact selection. No native contact coefficient scaling."
+    },
+    "air_acceleration": {
+      "value": 10,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.AirAcceleration cfg94",
+      "limitation": "Positive ordinary coefficient path; prototype grounded/airborne gates approximate native mode/contact selection. No native contact coefficient scaling."
+    },
+    "ground_accel_drag": {
+      "value": 8.5,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.AccelDrag cfgA4",
+      "limitation": "Positive ordinary coefficient path; prototype grounded/airborne gates approximate native mode/contact selection. No native contact coefficient scaling."
+    },
+    "air_accel_drag": {
+      "value": 0.05,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.AirAccelDrag cfg98 cached physics774",
+      "limitation": "Positive ordinary coefficient path; prototype grounded/airborne gates approximate native mode/contact selection. No native contact coefficient scaling."
+    },
+    "air_decel_drag": {
+      "value": 0.2,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.AirDecelDrag cfg9C",
+      "limitation": "Positive ordinary coefficient path; prototype grounded/airborne gates approximate native mode/contact selection. No native contact coefficient scaling."
+    },
+    "ground_drag": {
+      "value": 10,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.DecelDrag cfgA8",
+      "limitation": "Positive ordinary coefficient path; prototype grounded/airborne gates approximate native mode/contact selection. No native contact coefficient scaling."
+    },
+    "walk_speed": {
+      "value": 6,
+      "provenance": "CONDITIONAL_DERIVATION",
+      "formula": "MaxSpeed7.5 * JogSpeedFraction.8",
+      "assumptions": "Lab ordinary WASD mapped to native style2/jog, movement multiplier1, directional multipliers1 and wall adjustment0; exact input/aim mode gates partial."
+    },
+    "sprint_speed": {
+      "value": 7.5,
+      "provenance": "CONDITIONAL_DERIVATION",
+      "formula": "MaxSpeed7.5 * assumed unmodified SprintSpeed stat1",
+      "assumptions": "Lab sprint mapped to native style3; movement/directional multipliers1 and wall adjustment0. Frame-specific sprint stats/runtime upgrades unverified."
+    },
+    "slide_boost": {
+      "value": 10,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/InputController.SlideBoost; serializer140926d70 ->Input464",
+      "limitation": "Lab slide admission/direction/cooldown gating approximate; stat93 assumed1 and exceptional service multiplier absent. Native direct additive insertion, not base velocity increase."
+    },
+    "slide_impulse_decay": {
+      "value": 10,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Accumulator1406c52f0 insertion decay24 initialized10, copied on insertion",
+      "limitation": "Live current-decay setters not exhaustively resolved; configurable lab experiment. Native linear magnitude decay/new-record first-evaluation grace recovered."
+    },
+    "slide_drag": {
+      "value": 0.69999999,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoWalkAttribs.SlideDrag cfgB0; native physics78*cfgB0; unmodified slide friction stat assumed1",
+      "limitation": "Flat-ground base braking uses the recovered no-input kernel and full selected cap, then adds the independent slide record. Lab grounding and jog/sprint selection approximate native mode/style gates. Posture5 does not imply style5; cap3 is not inferred. Slopes, mover/contact factors and root overrides remain separate."
+    },
+    "aim_entry_vertical_scale": {
+      "value": 0.25,
+      "provenance": "FILE_INITIAL_GLOBAL_WITH_LAB_GATE_MAPPING",
+      "source": "Aim manager14126AA70 reads global142847C44, statAA; scales physics vertical scalar3C8 by1+(target-1)*resource on inactive-to-active entry.",
+      "limitation": "Unmodified stat and enabled setter cfgCE==0 assumed. Lab admission, update scheduling, durations, recharge and wall behavior remain approximate."
+    },
+    "aim_gravity_scale": {
+      "value": 0.075,
+      "provenance": "FILE_INITIAL_GLOBAL_WITH_LAB_GATE_MAPPING",
+      "source": "142847C40, statAA target. Applied factor1+(target-1)*clamp(1-verticalScalar,0,1), using post-entry scalar.",
+      "limitation": "Threshold142847C48 is file-initial1 in native speed units; live values/stat overrides/units unmeasured. Not a constant multiplier throughout ascent."
+    },
+    "aim_duration": {
+      "value": 3.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "LotusAvatar ctor1411AD4C6 sets1CA0=3; serializer1408DCDC0 binds mAimGravityTime.",
+      "limitation": "Own TennoAvatar has no AimGravityTime field; effective inheritance and live statA9/stat10 overrides unverified. Wall latch hold timeout remains separate lab policy."
+    },
+    "aim_recharge": {
+      "value": 1.0,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoAvatar.AimGravityRechargeRate=1; serializer1408DE016 binds1CA4, read14126AF64.",
+      "limitation": "Lab recharge admission and held-empty guard approximate native eligibility; runtime overrides unverified."
+    },
+    "aim_exit_penalty": {
+      "value": 0.18000001,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoAvatar.AimGravityCoolOffRatio=.18000001; serializer1408DE03C binds1CA8, subtracted14126AEBC.",
+      "limitation": "Lab exit admission approximates native special-preserve gates; runtime overrides unverified."
+    },
+    "max_bullet_jumps": {
+      "value": 1,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Avatar serializer1402E2EB0 binds mNumBulletJumps to BE9; base ctor140A8F060 initializes BE9=1; landing/wall reset copies BE9 into BEA.",
+      "limitation": "Own TennoAvatar field absent; effective inherited/live cap unknown. Lab support/wall admission and reset timing remain approximate."
+    },
+    "max_air_rolls": {
+      "value": 1,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "TennoAvatar.NumAirDodges=1; Avatar serializer1402E2EB0 binds mNumAirDodges to BED; modified-max helper140E14990 feeds BEE resets.",
+      "limitation": "Lab uses this effective maximum directly; no runtime stat65 modifiers. Roll admission and actor update/contact scheduling remain approximate."
+    },
+    "air_roll_consumes_jump": {
+      "value": false,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Avatar serializer1402E2EB0 binds mAirDodgeConsumesJump to BE8; base ctor140A8F060 initializes BE8=0.",
+      "limitation": "Own TennoAvatar field absent. Native admission checks cached-air predicate OR flag8000, while PM4 rising-edge consumption checks flag8000 only; Lotus admission has bypasses. Lab maps this to accepted airborne roll, gates on positive shared budget and consumes one when enabled."
+    },
+    "wall_jump.speed_multiplier": {
+      "value": 1.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mAirJumpSpeed at 0xb48; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.height_multiplier": {
+      "value": 0.15000001,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.WallJumpHeightMultiplier",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.perpendicular_height_multiplier": {
+      "value": 0.75,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.WallJumpHeightPerpMultiplier",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.kick_off": {
+      "value": 0.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mWallJumpKickOff at 0xb68; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.perpendicular_kick_off": {
+      "value": 0.2,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.WallJumpKickOffPerp",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.max_speed": {
+      "value": 30.0,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.WallJumpHeightMaxSpeed",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.perpendicular_thrust": {
+      "value": 1.75,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.WallJumpPerpendicularThrust",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.along_wall_angle_degrees": {
+      "value": 45.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mAlongWallAngleThreshold at 0xbf4; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.normal_cooldown": {
+      "value": 0.5,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.IdealJumpTime:WRS_NONE",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.positive_side_cooldown": {
+      "value": 0.5,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.IdealJumpTime:WRS_LEFT",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.negative_side_cooldown": {
+      "value": 0.5,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.IdealJumpTime:WRS_RIGHT",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.facing_cooldown": {
+      "value": 0.5,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.IdealJumpTime:WRS_UP",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.minimum_timing_multiplier": {
+      "value": 1.0,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.MinimumTimingBasedJumpMultiplier",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.timing_window": {
+      "value": 0.40000001,
+      "provenance": "RECOVERED_STATIC_ASSET_WITH_LAB_GATE_MAPPING",
+      "source": "/Lotus/Types/Player/TennoClimbController.MaximumTimingDeviation",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.facing_gravity_scale": {
+      "value": 0.5,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mWallJumpToWallGravityMultiplier at 0xbdc; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.facing_gravity_duration": {
+      "value": 1.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mWallJumpToWallGravityMultiplierDuration at 0xbe0; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.side_gravity_scale": {
+      "value": 0.5,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mWallJumpAlongWallGravityMultiplier at 0xbe4; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.gravity_duration": {
+      "value": 1.0,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mWallJumpAlongWallGravityMultiplierDuration at 0xbe8; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.old_school_wall_run": {
+      "value": false,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mOldSchoolNewSchoolWallRun at 0x78; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.use_input_direction": {
+      "value": true,
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION",
+      "source": "Climb constructor1411FF010; mWallJumpUseInputDirection at 0x79; own TennoClimb field absent.",
+      "limitation": "Native finite wall-launch arithmetic is recovered before actor hook140DD0150; lab contact, planar vectors, actor-relative orientation, admission, timing schedule and identity hook remain assumptions. Static own values do not establish effective inheritance/runtime modifiers or measured trajectory."
+    },
+    "wall_jump.modified_speed_multiplier": {
+      "value": null,
+      "provenance": "IDENTITY_RUNTIME_STAT_ASSUMPTION",
+      "source": "None uses raw speed_multiplier / height_multiplier in original wall kernel; effective native stat results are external inputs.",
+      "limitation": "WallJump named speed modifier/stat blend and height statA5 are not measured. Facing subtype2 uses its separate raw coefficients regardless of these optional fields."
+    },
+    "wall_jump.modified_height_multiplier": {
+      "value": null,
+      "provenance": "IDENTITY_RUNTIME_STAT_ASSUMPTION",
+      "source": "None uses raw speed_multiplier / height_multiplier in original wall kernel; effective native stat results are external inputs.",
+      "limitation": "WallJump named speed modifier/stat blend and height statA5 are not measured. Facing subtype2 uses its separate raw coefficients regardless of these optional fields."
+    },
+    "wall_entry": {
+      "value": {
+        "enabled": true,
+        "parallel_angle_degrees": 60.0
+      },
+      "provenance": "NATIVE_CONSTRUCTOR_DEFAULT_ASSUMPTION_WITH_LAB_ADAPTER",
+      "source": "Climb constructor1411FF010 fields8A=true,7C=60; finite preparation140792B00. Missing JSON uses these serde defaults.",
+      "assumptions": "No active inherited/live override proof. Angle80 fixed0; optionalquery78 disabled; specialbitsclear; service admits. AABBnormal, planar base/input and immediate aim entry are LAB mappings. Native D0 XYZ and supplied service vector may differ."
+    },
+    "slide_slope_acceleration": {
+      "value": 6.0,
+      "status": "recovered static own-record candidate; supplied LAB configuration",
+      "source": "TennoWalkAttribs own SlideAccel=6, ControllerAttribs serializer140736B37 mapsAC; slope1400EAB81..9E uses abs(q/signedGravity)*cfgAC",
+      "limits": "Effective live inheritance/stat/config remains unproved. Generic default and absent legacy JSON adopt6 as an explicit LAB/static-Tenno assumption, not a native generic constructor value."
+    }
+  },
+  "remaining_fields": "Crouch speed3, legacy turn_rate fallback16, slide admission/end and cooldown, hull/collision, roll magnitude/end timing and wall contact/admission retain lab policies. Slide additive channel uses mapped static boost with constructor decay assumption; retaining impulse while blocked and suppressing it during wall latch are explicit lab collision policies. Flat slide base braking and bounded slope target/coefficient composition are mapped for the selected LAB ground-slide admission; full native mode/style/contact selection remains unimplemented. Prior published working normal and native-role supportbit remain separate from actor grounded. Signed gravity uses current pre-aging LAB named modifiers. Scalar normalization approximates native RSQRT refinement; no bitwise float claim. Zero-AccelDrag flat-slide fallback uses lab world-space input and selected cap. With zero alignment drag and zero input, the lab assumes the native ordinary snapshot/reset left working movement zero; special retained-working-vector paths are not reproduced. Aim entry scaling/vertical-dependent gravity and ordinary resource update order now follow recovered arithmetic; live admission, shared wall transition modes and game scheduling remain approximate. Wall vector/height and conditional timing arithmetic now use the recovered finite kernel; this preset supplies static wall coefficients with constructor and identity-stat assumptions. Deprecated fixed wall-speed keys are ignored and behavior changes as described in wall_configuration_migration.",
+  "wall_configuration_migration": {
+    "removed_preset_values": {
+      "wall_jump_horizontal_speed": 8.0,
+      "wall_jump_vertical_speed": 9.0,
+      "wall_jump_cooldown": 0.2
+    },
+    "new_field": "wall_jump",
+    "legacy_loading": "Old JSON remains accepted by serde. Unknown wall_jump_horizontal_speed, wall_jump_vertical_speed and wall_jump_cooldown are ignored; absent nested wall_jump loads constructor-backed kernel defaults. This is a behavior change, not preservation of the previous fixed normal*8 / vertical9 / .2-second cooldown behavior.",
+    "static_preset_behavior": "This preset explicitly supplies the full kernel configuration, combining own Tenno coefficients with labeled constructor-only fields and identity stat assumptions. Subtype1/2/3/4 select mapped IdealJumpTime NONE/UP/LEFT/RIGHT values; own DOWN=.5 is not separately used by this kernel. MinimumTimingBasedJumpMultiplier1 makes the timing factor1 for this static preset.",
+    "limits": "Lab wall admission uses axis-aligned side contact while airborne; native state5/B43 bullet redirection, role/contact gates, post-vector service mutation, effect/root-motion and exact scheduling remain unimplemented. Launch target is height with sqrt/max scalar handling; ongoing wall gravity uses a separate named channel. No runtime capture or measured reference fit."
+  }
+}
